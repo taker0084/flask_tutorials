@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+<!--テンプレートのbase.htmlを書き換えて使用する-->
+
+<!--base.htmlのtitleとheaderを定義-->
+{% block header %}
+<h1>{% block title %}Register{% endblock %}</h1>
+{% endblock %} {% block content %}
+<!--postメソッドのformを呼び出す-->
+<form method="post">
+  <label for="username">Username</label>
+  <!--キーとしてusernameを設定し、取得できるようにする-->
+  <input name="username" id="username" required />
+  <label for="password">Password</label>
+  <!--typeをpasswordにして、入力を*にする-->
+  <input type="password" name="password" id="password" required />
+  <!--送信ボタンを、Registerという名前で作成-->
+  <input type="submit" value="Register" />
+</form>
+{% endblock %}
