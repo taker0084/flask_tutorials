@@ -6,9 +6,9 @@
   <h1>Flaskr</h1>
   <ul>
     <!--{#{% %} で制御フロー(ifなど)が可能になる #}-->
-    {% if g.user %}
+    {% if session["id"] %}
     <!--ログインしている場合、名前とログアウトURLを表示-->
-    <li><span>{{ g.user['username'] }}</span></li>
+    <li><span>{{ session['username'] }}</span></li>
     <li><a href="{{ url_for('auth.logout') }}">Log Out</a></li>
     {% else %}
     <!--ログインしていない場合、登録画面とログイン画面を表示-->
