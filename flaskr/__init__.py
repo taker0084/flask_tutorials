@@ -1,22 +1,22 @@
 import os
 
 from flask import Flask
-
-#from instance.config import SECRET_KEY
+from dotenv import load_dotenv
 
 # このファイルはApplication Factoryの関数
 
 
 def create_app(test_config=None):
     # create and configure the app
-
     # Flaskインスタンスの作成,nameには実行したモジュール名(今回だとapp)が入る
     app = Flask(__name__, instance_relative_config=True)
     # __name__:モジュールとして呼び出されるとファイル名(他ファイルからインポートなど)、スクリプトとして実行されるとmainになる
     # instance_relative_config=True 設定ファイルがインスタンスフォルダから相対的に示される、インスタンスフォルダはflaskrの外側にできる
 
+    load_dotenv()
+    
     app.config.from_mapping(  # 標準設定を行う
-        SECRET_KEY="dev",  # データの安全性を保つために行う　→　本来は無作為な値で更新
+        SECRET_KEY=os.environ['SECRET_KEY'],  # データの安全性を保つために行う　→　本来は無作為な値で更新
         DATABASE=os.path.join(
             app.instance_path, "flaskr.sqlite"
         ),  # データベースへのパス、instance_pathはFlaskのインスタンスが存在
