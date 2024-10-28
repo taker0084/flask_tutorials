@@ -6,6 +6,7 @@ from flask import (
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from flaskr.db import get_db
+from flaskr.models.user import user
 
 #Blueprintはviewやコードをまとめる方法、今回は`auth`というグループを作成する
 #`auth`グループ内の関数では全て前に/authがつく
@@ -26,16 +27,19 @@ def register():
             error = 'Password is required.'
 
         if error is None:
-            try:
-                db.execute(
-                    "INSERT INTO user (username, password) VALUES (?, ?)",   #プレースホルダーによるSQLインジェクション対策
-                    (username, generate_password_hash(password)),   #パスワードのハッシュ化を行ってから保存
-                )
-                db.commit()
-            except db.IntegrityError:
-                error = f"User {username} is already registered."       #usernameは一意であるため、登録済みの場合エラーを表示
-            else:
-                return redirect(url_for("auth.login"))     #データを保存したらログイン画面に遷移,url_forは関数名からURLを生成
+            error = user.register(username,password)
+            # try:
+            #     db.execute(
+            #         "INSERT INTO user (username, password) VALUES (?, ?)",   #プレースホルダーによるSQLインジェクション対策
+            #         (username, generate_password_hash(password)),   #パスワードのハッシュ化を行ってから保存
+            #     )
+            #     db.commit()
+            # except db.IntegrityError:
+            #     error = f"User {username} is already registered."       #usernameは一意であるため、登録済みの場合エラーを表示
+            # else:
+            #     return redirect(url_for("auth.login"))     #データを保存したらログイン画面に遷移,url_forは関数名からURLを生成
+            if error is None:
+                return redirect(url_for("auth.login"))
 
         flash(error)                                                 #エラーをセッションに保存し、レンダリングされた時にエラーをhtmlに組み込む
 
@@ -47,20 +51,21 @@ def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        db = get_db()                                      #DBへのコネクションを作成
-        error = None
-        user = db.execute(
-            'SELECT * FROM user WHERE username = ?', (username,)             #dbからusernameが一致する行を取得
-        ).fetchone()                                                         #クエリから一行のみ返す(特定のuserの情報は一行のみ)
+        User,error = user.get_by_name(username)
+        # error = None
+        # db = get_db()
+        # user = db.execute(
+        #     'SELECT * FROM user WHERE username = ?', (username,)             #dbからusernameが一致する行を取得
+        # ).fetchone()                                                         #クエリから一行のみ返す(特定のuserの情報は一行のみ)
 
-        if user is None:
+        if User is None:
             error = 'Incorrect username.'
-        elif not check_password_hash(user['password'], password):#入力されたパスワードのハッシュ値と、保存したハッシュ値を比較
+        elif not check_password_hash(User['password'], password):#入力されたパスワードのハッシュ値と、保存したハッシュ値を比較
             error = 'Incorrect password.'
 
         if error is None:
             session.clear()                                                  #ログインが成功した場合、セッションを初期化 → セッションはリクエストを跨いで格納されるデータのdict
-            session['user_id'] = user['id']                                  #セッションにユーザーIDを登録
+            session['user_id'] = User['id']                                  #セッションにユーザーIDを登録
             return redirect(url_for('index'))              #初期画面に遷移
 
         flash(error)
@@ -75,9 +80,10 @@ def load_logged_in_user():
     if user_id is None:
         g.user = None
     else:                                                                     #ログイン済みの場合、user情報をリクエストに付与
-        g.user = get_db().execute(                             
-            'SELECT * FROM user WHERE id = ?', (user_id,)
-        ).fetchone()
+        g.user = user.get_by_id(user_id)
+        # g.user = get_db().execute(                             
+        #     'SELECT * FROM user WHERE id = ?', (user_id,)
+        # ).fetchone()
 
 #ログアウト処理       
 @bp.route('/logout/')
