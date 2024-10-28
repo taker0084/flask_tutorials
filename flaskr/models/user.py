@@ -22,19 +22,19 @@ class user:
     return error
   
   @classmethod
-  def get_by_name(cls,username):
+  def get(cls,query,userinfo):
     db=get_db()
     error = None;
     if error is None:
       return db.execute(
-        'SELECT * FROM user WHERE username = ?', (username,)             #dbからusernameが一致する行を取得
+        f'SELECT * FROM user WHERE {query} = ?', (userinfo,)             #dbからusernameが一致する行を取得
       ).fetchone(),None  
     else: 
       return None,error
   
-  @classmethod
-  def get_by_id(cls,user_id):
-    db=get_db()
-    return db.execute(                             
-      'SELECT * FROM user WHERE id = ?', (user_id,)                   #dbからidの一致する行を取得
-    ).fetchone()
+  # @classmethod
+  # def get_by_id(cls,user_id):
+  #   db=get_db()
+  #   return db.execute(                             
+  #     'SELECT * FROM user WHERE id = ?', (user_id,)                   #dbからidの一致する行を取得
+  #   ).fetchone()

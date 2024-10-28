@@ -51,7 +51,7 @@ def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        User,error = user.get_by_name(username)
+        User,error = user.get("username",username)
         # error = None
         # db = get_db()
         # user = db.execute(
@@ -76,11 +76,12 @@ def login():
 @bp.before_app_request
 def load_logged_in_user():
     user_id = session.get('user_id')
+    error = None
 
     if user_id is None:
         g.user = None
     else:                                                                     #ログイン済みの場合、user情報をリクエストに付与
-        g.user = user.get_by_id(user_id)
+        g.user,error = user.get("id",user_id)
         # g.user = get_db().execute(                             
         #     'SELECT * FROM user WHERE id = ?', (user_id,)
         # ).fetchone()
