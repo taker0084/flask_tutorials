@@ -1,4 +1,4 @@
-from flask import Blueprint, flash, g, redirect, render_template, request, url_for
+from flask import Blueprint, flash, g, redirect, render_template, request, session, url_for
 from werkzeug.exceptions import abort
 
 from flaskr.auth import login_required
@@ -37,7 +37,8 @@ def create():
         if error is not None:
             flash(error)                                 #エラーがあれば表示
         else:                                                    #なければDBに保存
-            post.save(title,body,g.user['id'])
+            Post = post(title,body,session["user_id"])
+            Post.save()
             # db = get_db()
             # db.execute(
             #     'INSERT INTO post (title, body, author_id)'      #DBに行を挿入
@@ -63,7 +64,7 @@ def get_post(id, check_author=True):
     if Post is None:
         abort(404, f"Post id {id} doesn't exist.")         #404は、NotFoundエラー,　statusの後にエラーの文言を追加できる
 
-    if check_author and Post['author_id'] != g.user['id']:
+    if check_author and Post['author_id'] != session['user_id']:
         abort(403)                                         #403は、Forbidden(禁止)エラー
 
     return Post
@@ -85,7 +86,8 @@ def update(id):
         if error is not None:
             flash(error)
         else:
-            post.update(title,body,id)
+            Post = post(title,body,p_id=id)
+            Post.update()
             # db = get_db()
             # db.execute(
             #     #postテーブルのtitle、bodyに更新後の値を設定

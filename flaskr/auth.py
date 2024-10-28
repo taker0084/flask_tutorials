@@ -6,7 +6,7 @@ from flask import (
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from flaskr.db import get_db
-from flaskr.models.user import user
+from flaskr.models.user import User
 
 #Blueprintはviewやコードをまとめる方法、今回は`auth`というグループを作成する
 #`auth`グループ内の関数では全て前に/authがつく
@@ -27,7 +27,8 @@ def register():
             error = 'Password is required.'
 
         if error is None:
-            error = user.register(username,password)
+            user = User(username=username,password=password)
+            error = user.register()
             # try:
             #     db.execute(
             #         "INSERT INTO user (username, password) VALUES (?, ?)",   #プレースホルダーによるSQLインジェクション対策
@@ -51,21 +52,21 @@ def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        User,error = user.get("username",username)
-        # error = None
+        user = User.get_by_name(username)
+        error = None
         # db = get_db()
         # user = db.execute(
         #     'SELECT * FROM user WHERE username = ?', (username,)             #dbからusernameが一致する行を取得
         # ).fetchone()                                                         #クエリから一行のみ返す(特定のuserの情報は一行のみ)
 
-        if User is None:
+        if user is None:
             error = 'Incorrect username.'
-        elif not check_password_hash(User['password'], password):#入力されたパスワードのハッシュ値と、保存したハッシュ値を比較
+        elif not check_password_hash(user.password, password):#入力されたパスワードのハッシュ値と、保存したハッシュ値を比較
             error = 'Incorrect password.'
 
         if error is None:
             session.clear()                                                  #ログインが成功した場合、セッションを初期化 → セッションはリクエストを跨いで格納されるデータのdict
-            session['user_id'] = User['id']                                  #セッションにユーザーIDを登録
+            session['user_id'] = user.id                                     #セッションにユーザーIDを登録
             return redirect(url_for('index'))              #初期画面に遷移
 
         flash(error)
@@ -78,13 +79,13 @@ def load_logged_in_user():
     user_id = session.get('user_id')
     error = None
 
-    if user_id is None:
-        g.user = None
-    else:                                                                     #ログイン済みの場合、user情報をリクエストに付与
-        g.user,error = user.get("id",user_id)
-        # g.user = get_db().execute(                             
-        #     'SELECT * FROM user WHERE id = ?', (user_id,)
-        # ).fetchone()
+    # if user_id is None:
+    #     g.user = None
+    # else:                                                                     #ログイン済みの場合、user情報をリクエストに付与
+    #     g.user = User.get_by_id(user_id)
+    #     # g.user = get_db().execute(                             
+    #     #     'SELECT * FROM user WHERE id = ?', (user_id,)
+    #     # ).fetchone()
 
 #ログアウト処理       
 @bp.route('/logout/')
@@ -96,7 +97,7 @@ def logout():
 def login_required(view):
     @functools.wraps(view)                                            #元のview関数の処理を行う前に処理を行う
     def wrapped_view(**kwargs):
-        if g.user is None:
+        if session['user_id'] is None:
             return redirect(url_for('auth.login'))          #ログインしていない場合は自動的にログイン画面に遷移
 
         return view(**kwargs)                                                 #ログインしていれば元のview関数を実行
